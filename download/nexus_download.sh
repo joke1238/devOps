@@ -2,8 +2,10 @@
 # This script is used to download Sonatype Nexus Repository OSS from the official website.
 set -euo pipefail
 
-NEXUS_URL="https://download.sonatype.com/nexus/3/latest-unix.tar.gz"
-TAR_FILE="nexus-latest-unix.tar.gz"
+NEXUS_VERSION="3.93.0-06"
+ARCH="linux-x86_64"
+NEXUS_URL="https://download.sonatype.com/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
+TAR_FILE="nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
 INSTALL_DIR="/opt/nexus"
 
 echo "📦 创建安装目录..."
