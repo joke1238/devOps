@@ -6,6 +6,7 @@ Shell 脚本工具库，用于 DevOps 日常操作和自动化任务。
 
 - [JDK 下载脚本](download/jdk_download.sh) — JDK 自动下载工具
 - [Maven 下载脚本](download/maven_download.sh) — Maven 自动下载工具
+- [Node.js 下载脚本](download/node_download.sh) — Node.js LTS 自动下载工具
 
 ## 使用方式
 
