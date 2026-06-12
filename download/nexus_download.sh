@@ -4,7 +4,11 @@ set -euo pipefail
 
 NEXUS_VERSION="3.93.0-06"
 ARCH="linux-x86_64"
-NEXUS_URL="https://download.sonatype.com/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
+
+# 国内镜像源（推荐，速度快）
+NEXUS_URL="https://mirrors.huaweicloud.com/sonatype/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
+# 官方源（国内下载较慢，如镜像不可用可切换）
+# NEXUS_URL="https://download.sonatype.com/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
 TAR_FILE="nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
 INSTALL_DIR="/opt/nexus"
 
