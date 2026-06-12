@@ -4,11 +4,7 @@ set -euo pipefail
 
 NEXUS_VERSION="3.93.0-06"
 ARCH="linux-x86_64"
-
-# 国内镜像源（推荐，速度快）
-NEXUS_URL="https://mirrors.huaweicloud.com/sonatype/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
-# 官方源（国内下载较慢，如镜像不可用可切换）
-# NEXUS_URL="https://download.sonatype.com/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
+NEXUS_URL="https://download.sonatype.com/nexus/3/nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
 TAR_FILE="nexus-${NEXUS_VERSION}-${ARCH}.tar.gz"
 INSTALL_DIR="/opt/nexus"
 
@@ -16,7 +12,20 @@ echo "📦 创建安装目录..."
 sudo mkdir -p "$INSTALL_DIR"
 
 echo "⬇️  下载 Nexus Repository OSS..."
-sudo wget -O "$TAR_FILE" "$NEXUS_URL"
+if command -v axel &>/dev/null; then
+    # axel 多线程下载，比 wget 快 3-5 倍
+    sudo axel -n 8 -o "$TAR_FILE" "$NEXUS_URL"
+else
+    sudo wget -O "$TAR_FILE" "$NEXUS_URL"
+fi
+
+# 校验下载文件是否为有效的 gzip 格式
+if ! file "$TAR_FILE" | grep -q "gzip compressed"; then
+    echo "❌ 下载失败！文件不是有效的压缩包，请检查网络或镜像源。"
+    echo "   实际文件类型: $(file "$TAR_FILE" | cut -d: -f2)"
+    sudo rm -f "$TAR_FILE"
+    exit 1
+fi
 
 echo "📂 解压到 $INSTALL_DIR..."
 EXTRACT_DIR=$(sudo tar -tzf "$TAR_FILE" | head -1 | cut -d/ -f1)
