@@ -5,10 +5,12 @@ set -euo pipefail
 # ============================================
 # 配置区域 - 可根据需要修改
 # ============================================
-MYSQL_VERSION="8.4.4"
+MYSQL_VERSION="8.4.8"
 MYSQL_FULL_VERSION="mysql-${MYSQL_VERSION}-linux-glibc2.28-x86_64"
-# 官方下载地址（国内下载较慢）
-MYSQL_URL="https://cdn.mysql.com/Downloads/MySQL-8.4/${MYSQL_FULL_VERSION}.tar.xz"
+# 官方下载地址（dev.mysql.com/get 会重定向到 CDN）
+MYSQL_URL="https://dev.mysql.com/get/Downloads/MySQL-8.4/${MYSQL_FULL_VERSION}.tar.xz"
+# 备用官方 CDN（若上述地址失败）
+MYSQL_CDN_URL="https://cdn.mysql.com/Downloads/MySQL-8.4/${MYSQL_FULL_VERSION}.tar.xz"
 # 华为云镜像（国内下载更快）
 MIRROR_URL="https://repo.huaweicloud.com/mysql/Downloads/MySQL-8.4/${MYSQL_FULL_VERSION}.tar.xz"
 TAR_FILE="${MYSQL_FULL_VERSION}.tar.xz"
@@ -91,20 +93,39 @@ echo ""
 echo "⬇️  下载 MySQL ${MYSQL_VERSION}..."
 
 # 优先使用国内镜像
+DOWNLOAD_SUCCESS=false
+download_with() {
+    local tool="$1" url="$2" label="$3"
+    echo "   ⬇️  尝试 $label ..."
+    if [ "$tool" = "axel" ]; then
+        sudo axel -n 8 -o "$TAR_FILE" "$url" && DOWNLOAD_SUCCESS=true
+    else
+        sudo wget -O "$TAR_FILE" "$url" && DOWNLOAD_SUCCESS=true
+    fi
+}
+
+DOWNLOAD_TOOL=""
 if command -v axel &>/dev/null; then
-    echo "   使用 axel 多线程下载（华为云镜像）..."
-    sudo axel -n 8 -o "$TAR_FILE" "$MIRROR_URL" || {
-        echo "   镜像下载失败，尝试官方源..."
-        sudo axel -n 8 -o "$TAR_FILE" "$MYSQL_URL"
-    }
+    DOWNLOAD_TOOL="axel"
 elif command -v wget &>/dev/null; then
-    echo "   使用 wget 下载（华为云镜像）..."
-    sudo wget -O "$TAR_FILE" "$MIRROR_URL" || {
-        echo "   镜像下载失败，尝试官方源..."
-        sudo wget -O "$TAR_FILE" "$MYSQL_URL"
-    }
+    DOWNLOAD_TOOL="wget"
 else
     echo "❌ 未找到 wget 或 axel"
+    exit 1
+fi
+
+# 依次尝试：华为云镜像 → dev.mysql.com 官方 → cdn.mysql.com 备用
+download_with "$DOWNLOAD_TOOL" "$MIRROR_URL" "华为云镜像" || true
+if [ "$DOWNLOAD_SUCCESS" = false ]; then
+    download_with "$DOWNLOAD_TOOL" "$MYSQL_URL" "官方源 dev.mysql.com" || true
+fi
+if [ "$DOWNLOAD_SUCCESS" = false ]; then
+    download_with "$DOWNLOAD_TOOL" "$MYSQL_CDN_URL" "备用源 cdn.mysql.com" || true
+fi
+if [ "$DOWNLOAD_SUCCESS" = false ]; then
+    echo "❌ 所有下载地址均失败！"
+    echo "   可手动下载后放到当前目录:"
+    echo "   wget $MYSQL_URL"
     exit 1
 fi
 
